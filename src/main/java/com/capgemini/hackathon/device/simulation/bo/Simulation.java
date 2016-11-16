@@ -2,12 +2,13 @@ package com.capgemini.hackathon.device.simulation.bo;
 
 import java.util.concurrent.Callable;
 
+import com.capgemini.hackathon.device.service.DeviceClientCustom;
 import com.capgemini.hackathon.device.simulation.DeviceClientConfig;
 import com.ibm.iotf.client.device.DeviceClient;
 
 public abstract class Simulation implements Callable<String> {
 
-	private DeviceClient deviceClient;
+	private DeviceClientCustom deviceClient;
 	private DeviceClientConfig deviceConfig;
 	private Object id;
 
@@ -18,7 +19,7 @@ public abstract class Simulation implements Callable<String> {
 
 	public void connect() {
 		try {
-			deviceClient = new DeviceClient(deviceConfig.asProperties());
+			deviceClient = new DeviceClientCustom(deviceConfig.asProperties());
 			// Connect to Internet of Things Foundation
 			deviceClient.connect();
 			configureDeviceClient(deviceClient);
@@ -35,7 +36,7 @@ public abstract class Simulation implements Callable<String> {
 		BORegistry.getInstance().unregister(this);
 	}
 
-	public DeviceClient getDeviceClient() {
+	public DeviceClientCustom getDeviceClient() {
 		return deviceClient;
 	}
 
@@ -54,6 +55,6 @@ public abstract class Simulation implements Callable<String> {
 
 	protected abstract void process();
 
-	protected abstract void configureDeviceClient(DeviceClient deviceClient);
+	protected abstract void configureDeviceClient(DeviceClientCustom deviceClient);
 
 }

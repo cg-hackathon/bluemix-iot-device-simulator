@@ -1,5 +1,6 @@
 package com.capgemini.hackathon.device.simulation.bo;
 
+import com.capgemini.hackathon.device.service.DeviceClientCustom;
 import com.capgemini.hackathon.device.simulation.DeviceClientConfig;
 import com.capgemini.hackathon.device.simulation.model.Location;
 import com.google.gson.JsonObject;
@@ -26,7 +27,7 @@ public class Car extends Vehicle {
 	}
 
 	@Override
-	protected void configureDeviceClient(DeviceClient deviceClient) {
+	protected void configureDeviceClient(DeviceClientCustom deviceClient) {
 		// nothing to do
 	}
 }

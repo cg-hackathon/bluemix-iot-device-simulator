@@ -14,7 +14,7 @@
 	<classpathentry kind="lib" path="lib/jna-4.1.0.jar"/>
 	<classpathentry kind="lib" path="lib/jna-platform-4.1.0.jar"/>
 	<classpathentry kind="lib" path="lib/gson-2.2.4.jar"/>
-	<classpathentry kind="lib" path="lib/com.ibm.iotf.client-0.0.3.jar"/>
+	<classpathentry kind="lib" path="lib/com.ibm.iotf.client-0.0.3.jar" sourcepath="C:/Users/fstanell/Projects/ibm iot/iot-java"/>
 	<classpathentry kind="lib" path="lib/graphhopper-0.4-20150128.170053-90.jar"/>
 	<classpathentry kind="lib" path="lib/org.eclipse.paho.client.mqttv3-1.0.2.jar"/>
 	<classpathentry kind="lib" path="lib/org.eclipse.paho.mqtt.utility-1.0.2.jar"/>

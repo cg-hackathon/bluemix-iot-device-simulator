@@ -15,6 +15,7 @@ import com.graphhopper.GHResponse;
 import com.ibm.iotf.client.device.Command;
 import com.ibm.iotf.client.device.CommandCallback;
 import com.ibm.iotf.client.device.DeviceClient;
+import com.capgemini.hackathon.device.service.DeviceClientCustom;
 
 /**
  * Hospital simulator class which handles emergencies, and notfies next
@@ -36,7 +37,7 @@ public class Hospital extends Simulation {
 	}
 
 	@Override
-	protected void configureDeviceClient(DeviceClient deviceClient) {
+	protected void configureDeviceClient(DeviceClientCustom deviceClient) {
 		deviceClient.setCommandCallback(new EmergencyDeviceCommand());
 
 	}
@@ -134,22 +135,23 @@ public class Hospital extends Simulation {
 	}
 
 	private class EmergencyDeviceCommand implements CommandCallback {
-
+		//To control Geospatial, the emergency id is created in the REST Service of the RouteWebApplication
 		@Override
 		public void processCommand(Command command) {
 			JsonObject jsonCmd = new JsonParser().parse(command.getPayload()).getAsJsonObject().get("d")
 					.getAsJsonObject();
 			String latitude = jsonCmd.get("latitude").getAsString();
 			String longtitude = jsonCmd.get("longitude").getAsString();
+			String newEmergencyID = jsonCmd.get("newEmergencyID").getAsString();
 
-			handleNewEmergency(latitude, longtitude);
+			handleNewEmergency(latitude, longtitude, newEmergencyID);
 
 		}
 
-		private void handleNewEmergency(String latitude, String longtitude) {
+		private void handleNewEmergency(String latitude, String longtitude, String newEmergencyID) {
 			// new emergency
 			Emergency emergency = new Emergency();
-			emergency.setEmergencyId(UUID.randomUUID().toString());
+			emergency.setEmergencyId(newEmergencyID);
 			emergency.setLocation(new Location(Double.valueOf(latitude), Double.valueOf(longtitude)));
 
 			synchronized (emergencies) {
