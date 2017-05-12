@@ -262,11 +262,8 @@ public abstract class Vehicle extends Simulation {
 
 		private void handleNewEmergency(String latitude, String longtitude) {
 			try{
-			URL url = new URL("http//corbatto.de:32751/getEmergencyLocation");
-			URLConnection con = url.openConnection();
-			HttpURLConnection http = (HttpURLConnection)con;
-			http.setRequestMethod("POST"); // PUT is another valid option
-			http.setDoOutput(true);
+				JsonObject JsonEmergencyReq = new EmergencyRequest(0,0).asJson();
+				getDeviceClient().publishEvent(EmergencyRequest.EVENT, JsonEmergencyReq);
 			} catch (Exception e)
 			{
 				e.printStackTrace();
