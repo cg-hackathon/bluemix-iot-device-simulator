@@ -5,7 +5,13 @@ import java.util.Locale;
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
+import com.graphhopper.routing.util.CarFlagEncoder;
+import com.graphhopper.routing.util.EdgeFilter;
 import com.graphhopper.routing.util.EncodingManager;
+import com.graphhopper.storage.index.LocationIndex;
+import com.graphhopper.storage.index.QueryResult;
+import com.graphhopper.util.EdgeIteratorState;
+import com.graphhopper.util.shapes.GHPoint;
 
 /**
  * 
@@ -54,6 +60,7 @@ public class RouteCalculator {
 		// create a request object
 		GHRequest req = new GHRequest(latFrom, lonFrom, latTo, lonTo).setWeighting("fastest").setVehicle("car")
 				.setLocale(Locale.UK);
+		
 		GHResponse rsp = engine.route(req);
 
 		return rsp;

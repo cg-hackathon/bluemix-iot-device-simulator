@@ -1,10 +1,15 @@
 package com.capgemini.hackathon.device.simulation.bo;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Random;
+import java.util.UUID;
 
 import org.joda.time.DateTime;
 
 import com.capgemini.hackathon.device.simulation.DeviceClientConfig;
+import com.capgemini.hackathon.device.simulation.model.Emergency;
 import com.capgemini.hackathon.device.simulation.model.EmergencyRequest;
 import com.capgemini.hackathon.device.simulation.model.Location;
 import com.capgemini.hackathon.device.simulation.model.Route;
@@ -12,7 +17,11 @@ import com.capgemini.hackathon.device.simulation.model.VehicleLocation;
 import com.capgemini.hackathon.device.simulation.routing.MapCoordinatePoint;
 import com.capgemini.hackathon.device.simulation.routing.RouteCalculator;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.graphhopper.GHResponse;
+import com.ibm.iotf.client.device.Command;
+import com.ibm.iotf.client.device.CommandCallback;
+import com.ibm.iotf.client.device.DeviceClient;
 
 public abstract class Vehicle extends Simulation {
 
@@ -33,7 +42,11 @@ public abstract class Vehicle extends Simulation {
 	
 	private static final double CrashProb=0.1;
 	
-	
+	@Override
+	protected void configureDeviceClient(DeviceClient deviceClient)
+	{
+		deviceClient.setCommandCallback(new VehicleDeviceCommand());
+	}
 
 	public Vehicle(DeviceClientConfig deviceClientConfig, Location location, Object id) {
 		super(deviceClientConfig, id);
@@ -233,6 +246,33 @@ public abstract class Vehicle extends Simulation {
 		} else {
 			return DEFAULT_SPEED;
 		}
+	}
+	private class VehicleDeviceCommand implements CommandCallback {
+
+		@Override
+		public void processCommand(Command command) {
+			JsonObject jsonCmd = new JsonParser().parse(command.getPayload()).getAsJsonObject().get("d")
+					.getAsJsonObject();
+			String latitude = jsonCmd.get("latitude").getAsString();
+			String longtitude = jsonCmd.get("longitude").getAsString();
+
+			handleNewEmergency(latitude, longtitude);
+
+		}
+
+		private void handleNewEmergency(String latitude, String longtitude) {
+			try{
+			URL url = new URL("http//corbatto.de:32751/getEmergencyLocation");
+			URLConnection con = url.openConnection();
+			HttpURLConnection http = (HttpURLConnection)con;
+			http.setRequestMethod("POST"); // PUT is another valid option
+			http.setDoOutput(true);
+			} catch (Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+
 	}
 
 }
