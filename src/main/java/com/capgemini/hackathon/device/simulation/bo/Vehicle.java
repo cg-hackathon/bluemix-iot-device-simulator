@@ -40,7 +40,7 @@ public abstract class Vehicle extends Simulation {
 	//route Information
 	private Route route;
 	
-	private static final double CrashProb=0.1;
+	private static final double CrashProb = 0.00208; // About 1 every minute (considering 8 cars are driving)
 	
 	@Override
 	protected void configureDeviceClient(DeviceClient deviceClient)
