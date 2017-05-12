@@ -1,8 +1,11 @@
 package com.capgemini.hackathon.device.simulation.bo;
 
+import java.util.Random;
+
 import org.joda.time.DateTime;
 
 import com.capgemini.hackathon.device.simulation.DeviceClientConfig;
+import com.capgemini.hackathon.device.simulation.model.EmergencyRequest;
 import com.capgemini.hackathon.device.simulation.model.Location;
 import com.capgemini.hackathon.device.simulation.model.Route;
 import com.capgemini.hackathon.device.simulation.model.VehicleLocation;
@@ -28,12 +31,9 @@ public abstract class Vehicle extends Simulation {
 	//route Information
 	private Route route;
 	
-	/*
-	 * public List<PathWrapper> getAll() {
-        return pathWrappers;
-    }
-	 * 
-	 */
+	private static final double CrashProb=0.1;
+	
+	
 
 	public Vehicle(DeviceClientConfig deviceClientConfig, Location location, Object id) {
 		super(deviceClientConfig, id);
@@ -44,6 +44,15 @@ public abstract class Vehicle extends Simulation {
 		this(deviceClientConfig, Location.createRandomLocation(), id);
 	}
 
+	protected void publishEmergencyRequest(double lat,double lon){
+		try{
+			JsonObject JsonEmergencyReq = new EmergencyRequest(lat,lon).asJson();
+			getDeviceClient().publishEvent(EmergencyRequest.EVENT, JsonEmergencyReq);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+	
 	protected void publishRoute(){
 		try{
 			JsonObject JsonRoute=route.asJson();
@@ -52,6 +61,14 @@ public abstract class Vehicle extends Simulation {
 			
 		}catch (Exception e){
 			e.printStackTrace();
+		}
+	}
+	
+	protected void tickCrash(){
+		Random rn = new Random();
+		if(rn.nextDouble() < CrashProb)
+		{
+			publishEmergencyRequest(currentLocation.getLatitude(),currentLocation.getLongitude());
 		}
 	}
 	
@@ -175,7 +192,7 @@ public abstract class Vehicle extends Simulation {
 
 					distLat = nextPointLatitude - currentLocation.getLatitude();
 					distLong = nextpointLongitude - currentLocation.getLongitude();
-					
+					tickCrash();
 					try {
 						// whatever time has passed so far, wait until 1s has passed
 						millis = DateTime.now().getMillis();
