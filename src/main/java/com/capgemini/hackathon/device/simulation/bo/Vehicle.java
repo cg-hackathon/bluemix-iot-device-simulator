@@ -4,6 +4,7 @@ import org.joda.time.DateTime;
 
 import com.capgemini.hackathon.device.simulation.DeviceClientConfig;
 import com.capgemini.hackathon.device.simulation.model.Location;
+import com.capgemini.hackathon.device.simulation.model.Route;
 import com.capgemini.hackathon.device.simulation.model.VehicleLocation;
 import com.capgemini.hackathon.device.simulation.routing.MapCoordinatePoint;
 import com.capgemini.hackathon.device.simulation.routing.RouteCalculator;
@@ -24,6 +25,15 @@ public abstract class Vehicle extends Simulation {
 	private Location currentLocation;
 	// destination Location
 	private Location destination;
+	//route Information
+	private Route route;
+	
+	/*
+	 * public List<PathWrapper> getAll() {
+        return pathWrappers;
+    }
+	 * 
+	 */
 
 	public Vehicle(DeviceClientConfig deviceClientConfig, Location location, Object id) {
 		super(deviceClientConfig, id);
@@ -34,11 +44,23 @@ public abstract class Vehicle extends Simulation {
 		this(deviceClientConfig, Location.createRandomLocation(), id);
 	}
 
+	protected void publishRoute(){
+		try{
+			JsonObject JsonRoute=route.asJson();
+			getDeviceClient().publishEvent(Route.EVENT,JsonRoute);
+			
+			
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+	
 	protected void publishLocation() {
 		try {
 
 			VehicleLocation vl = new VehicleLocation(currentLocation.getLatitude(), currentLocation.getLongitude(),
 					getId().toString());
+			
 			JsonObject event = vl.asJson();
 			addMetainformationWhenPublishLocation(event);
 			// Publish event to IoT
@@ -71,7 +93,9 @@ public abstract class Vehicle extends Simulation {
 		
 		GHResponse response = RouteCalculator.getInstance().calculateRoute(currentLocation.getLatitude(),
 				currentLocation.getLongitude(), destination.getLatitude(), destination.getLongitude());
+		
 
+		
 		// in case of error, the vehicle seems to be stuck somewhere
 		if (response.hasErrors()) {
 			
@@ -90,6 +114,15 @@ public abstract class Vehicle extends Simulation {
 
 			return;
 		}
+
+		route = Route.fromGHRes(this.getId().toString(),response);
+		try {
+			this.publishRoute();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 		
 		int i = 0;
 		long millis = DateTime.now().getMillis();
