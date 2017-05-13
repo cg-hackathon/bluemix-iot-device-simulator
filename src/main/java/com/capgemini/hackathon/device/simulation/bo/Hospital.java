@@ -6,6 +6,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.capgemini.hackathon.device.simulation.DeviceClientConfig;
 import com.capgemini.hackathon.device.simulation.model.Emergency;
+import com.capgemini.hackathon.device.simulation.model.EmergencyRequest;
 import com.capgemini.hackathon.device.simulation.model.Emergency.Status;
 import com.capgemini.hackathon.device.simulation.model.Location;
 import com.capgemini.hackathon.device.simulation.routing.RouteCalculator;
@@ -147,7 +148,6 @@ public class Hospital extends Simulation {
 		}
 
 		private void handleNewEmergency(String latitude, String longtitude) {
-			
 			// new emergency
 			Emergency emergency = new Emergency();
 			emergency.setEmergencyId(UUID.randomUUID().toString());

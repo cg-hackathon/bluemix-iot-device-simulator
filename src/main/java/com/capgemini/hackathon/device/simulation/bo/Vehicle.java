@@ -1,14 +1,27 @@
 package com.capgemini.hackathon.device.simulation.bo;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Random;
+import java.util.UUID;
+
 import org.joda.time.DateTime;
 
 import com.capgemini.hackathon.device.simulation.DeviceClientConfig;
+import com.capgemini.hackathon.device.simulation.model.Emergency;
+import com.capgemini.hackathon.device.simulation.model.EmergencyRequest;
 import com.capgemini.hackathon.device.simulation.model.Location;
+import com.capgemini.hackathon.device.simulation.model.Route;
 import com.capgemini.hackathon.device.simulation.model.VehicleLocation;
 import com.capgemini.hackathon.device.simulation.routing.MapCoordinatePoint;
 import com.capgemini.hackathon.device.simulation.routing.RouteCalculator;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.graphhopper.GHResponse;
+import com.ibm.iotf.client.device.Command;
+import com.ibm.iotf.client.device.CommandCallback;
+import com.ibm.iotf.client.device.DeviceClient;
 
 public abstract class Vehicle extends Simulation {
 
@@ -24,7 +37,11 @@ public abstract class Vehicle extends Simulation {
 	private Location currentLocation;
 	// destination Location
 	private Location destination;
-
+	//route Information
+	private Route route;
+	
+	private static final double CrashProb = 0.00208; // About 1 every minute (considering 8 cars are driving)
+	
 	public Vehicle(DeviceClientConfig deviceClientConfig, Location location, Object id) {
 		super(deviceClientConfig, id);
 		this.currentLocation = location;
@@ -34,11 +51,40 @@ public abstract class Vehicle extends Simulation {
 		this(deviceClientConfig, Location.createRandomLocation(), id);
 	}
 
+	protected void publishEmergencyRequest(double lat,double lon){
+		try{
+			JsonObject JsonEmergencyReq = new EmergencyRequest(lat,lon).asJson();
+			getDeviceClient().publishEvent(EmergencyRequest.EVENT, JsonEmergencyReq);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	protected void publishRoute(){
+		try{
+			JsonObject JsonRoute=route.asJson();
+			getDeviceClient().publishEvent(Route.EVENT,JsonRoute);
+			
+			
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	protected void tickCrash(){
+		Random rn = new Random();
+		if(rn.nextDouble() < CrashProb)
+		{
+			publishEmergencyRequest(currentLocation.getLatitude(),currentLocation.getLongitude());
+		}
+	}
+	
 	protected void publishLocation() {
 		try {
 
 			VehicleLocation vl = new VehicleLocation(currentLocation.getLatitude(), currentLocation.getLongitude(),
 					getId().toString());
+			
 			JsonObject event = vl.asJson();
 			addMetainformationWhenPublishLocation(event);
 			// Publish event to IoT
@@ -63,12 +109,8 @@ public abstract class Vehicle extends Simulation {
 	protected void driveToDestination(Location destination) {
 		this.driveToDestination(destination, FALSE_INTERRUPTION);
 	}
-
-	protected void driveToDestination(Location destination, Interruption interruption) {
-		// Calculate the route between the current and destination location
-
-		// System.out.println("Entering");
-		
+	
+	protected GHResponse calculateRoute(Location destination) {
 		GHResponse response = RouteCalculator.getInstance().calculateRoute(currentLocation.getLatitude(),
 				currentLocation.getLongitude(), destination.getLatitude(), destination.getLongitude());
 
@@ -88,8 +130,22 @@ public abstract class Vehicle extends Simulation {
 				e.printStackTrace();
 			}
 
-			return;
+			return null;
 		}
+		return response;
+	}
+	
+	protected void actuallyDriveToDestination(GHResponse response, Interruption interruption) {
+
+
+		route = Route.fromGHRes(this.getId().toString(),response);
+		try {
+			this.publishRoute();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 		
 		int i = 0;
 		long millis = DateTime.now().getMillis();
@@ -142,7 +198,7 @@ public abstract class Vehicle extends Simulation {
 
 					distLat = nextPointLatitude - currentLocation.getLatitude();
 					distLong = nextpointLongitude - currentLocation.getLongitude();
-					
+					tickCrash();
 					try {
 						// whatever time has passed so far, wait until 1s has passed
 						millis = DateTime.now().getMillis();
@@ -163,11 +219,24 @@ public abstract class Vehicle extends Simulation {
 		}
 	}
 
+	protected void driveToDestination(Location destination, Interruption interruption) {
+		// Calculate the route between the current and destination location
+
+		// System.out.println("Entering");
+		
+		GHResponse response = this.calculateRoute(destination);
+		if(response == null) {
+			return;
+		}
+		
+		this.actuallyDriveToDestination(response, interruption);
+	}
+
 	protected static interface Interruption {
 		public boolean interrupt();
 	}
 
-	private static class FalseInterruption implements Interruption {
+	public static class FalseInterruption implements Interruption {
 
 		@Override
 		public boolean interrupt() {
@@ -184,5 +253,6 @@ public abstract class Vehicle extends Simulation {
 			return DEFAULT_SPEED;
 		}
 	}
+	
 
 }
