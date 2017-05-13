@@ -10,6 +10,8 @@ import com.ibm.iotf.client.device.CommandCallback;
 import com.ibm.iotf.client.device.DeviceClient;
 
 public class Car extends Vehicle {
+	
+	private boolean gotSome = false;
 
 	public Car(DeviceClientConfig deviceClientConfig, Object id) {
 		super(deviceClientConfig, id);
@@ -19,7 +21,6 @@ public class Car extends Vehicle {
 	public void process() {
 		while (true) {
 			driveToDestination(Location.createRandomLocation());
-			
 		}
 
 	}
@@ -27,5 +28,9 @@ public class Car extends Vehicle {
 	@Override
 	protected void addMetainformationWhenPublishLocation(JsonObject event) {
 		// nothing to add
+	}
+
+	@Override
+	protected void configureDeviceClient(DeviceClient deviceClient) {
 	}
 }

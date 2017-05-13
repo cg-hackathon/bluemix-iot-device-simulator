@@ -137,7 +137,7 @@ public class Hospital extends Simulation {
 	private class EmergencyDeviceCommand implements CommandCallback {
 
 		@Override
-		public void processCommand(Command command) {			
+		public void processCommand(Command command) {
 			JsonObject jsonCmd = new JsonParser().parse(command.getPayload()).getAsJsonObject().get("d")
 					.getAsJsonObject();
 			String latitude = jsonCmd.get("latitude").getAsString();
