@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.joda.time.DateTime;
 
 import com.capgemini.hackathon.device.simulation.DeviceClientConfig;
+import com.capgemini.hackathon.device.simulation.bo.Car.VehicleDeviceCommand;
 import com.capgemini.hackathon.device.simulation.model.Emergency;
 import com.capgemini.hackathon.device.simulation.model.EmergencyRequest;
 import com.capgemini.hackathon.device.simulation.model.Location;
@@ -41,12 +42,6 @@ public abstract class Vehicle extends Simulation {
 	private Route route;
 	
 	private static final double CrashProb = 0.00208; // About 1 every minute (considering 8 cars are driving)
-	
-	@Override
-	protected void configureDeviceClient(DeviceClient deviceClient)
-	{
-		//nothing to do
-	}
 	
 	public Vehicle(DeviceClientConfig deviceClientConfig, Location location, Object id) {
 		super(deviceClientConfig, id);
@@ -223,6 +218,21 @@ public abstract class Vehicle extends Simulation {
 
 				i = i + 1;
 			}
+		}
+	}
+
+	@Override
+	protected void configureDeviceClient(DeviceClient deviceClient) {
+		deviceClient.setCommandCallback(new VehicleDeviceCommand());
+		// nothing to do
+	}
+	
+	private class VehicleDeviceCommand implements CommandCallback {
+
+		@Override
+		public void processCommand(Command command) {
+			System.out.println("VEHICLE RECEIVED COMMAND: "+command.getPayload());
+
 		}
 	}
 
