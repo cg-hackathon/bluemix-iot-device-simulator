@@ -1,14 +1,27 @@
 package com.capgemini.hackathon.device.simulation.bo;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Random;
+import java.util.UUID;
+
 import org.joda.time.DateTime;
 
 import com.capgemini.hackathon.device.simulation.DeviceClientConfig;
+import com.capgemini.hackathon.device.simulation.model.Emergency;
+import com.capgemini.hackathon.device.simulation.model.EmergencyRequest;
 import com.capgemini.hackathon.device.simulation.model.Location;
+import com.capgemini.hackathon.device.simulation.model.Route;
 import com.capgemini.hackathon.device.simulation.model.VehicleLocation;
 import com.capgemini.hackathon.device.simulation.routing.MapCoordinatePoint;
 import com.capgemini.hackathon.device.simulation.routing.RouteCalculator;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.graphhopper.GHResponse;
+import com.ibm.iotf.client.device.Command;
+import com.ibm.iotf.client.device.CommandCallback;
+import com.ibm.iotf.client.device.DeviceClient;
 
 public abstract class Vehicle extends Simulation {
 
@@ -16,7 +29,7 @@ public abstract class Vehicle extends Simulation {
 
 	// How close the vehicles reach their destination
 	private static final double DIST_LAT_LONG = 0.00005;
-	private static final double DEFAULT_SPEED = 0.0001;
+	private static final double DEFAULT_SPEED = 0.0003;
 	// The steps driving the vehicles per iteration
 	private final static double SPEED = Vehicle.getSPEED();
 
@@ -24,7 +37,11 @@ public abstract class Vehicle extends Simulation {
 	private Location currentLocation;
 	// destination Location
 	private Location destination;
-
+	//route Information
+	private Route route;
+	
+	private static final double CrashProb = 0.00208; // About 1 every minute (considering 8 cars are driving)
+	
 	public Vehicle(DeviceClientConfig deviceClientConfig, Location location, Object id) {
 		super(deviceClientConfig, id);
 		this.currentLocation = location;
@@ -34,11 +51,40 @@ public abstract class Vehicle extends Simulation {
 		this(deviceClientConfig, Location.createRandomLocation(), id);
 	}
 
+	protected void publishEmergencyRequest(double lat,double lon){
+		try{
+			JsonObject JsonEmergencyReq = new EmergencyRequest(lat,lon).asJson();
+			getDeviceClient().publishEvent(EmergencyRequest.EVENT, JsonEmergencyReq);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	protected void publishRoute(){
+		try{
+			JsonObject JsonRoute=route.asJson();
+			getDeviceClient().publishEvent(Route.EVENT,JsonRoute);
+			
+			
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	protected void tickCrash(){
+		Random rn = new Random();
+		if(rn.nextDouble() < CrashProb)
+		{
+			publishEmergencyRequest(currentLocation.getLatitude(),currentLocation.getLongitude());
+		}
+	}
+	
 	protected void publishLocation() {
 		try {
 
 			VehicleLocation vl = new VehicleLocation(currentLocation.getLatitude(), currentLocation.getLongitude(),
 					getId().toString());
+			
 			JsonObject event = vl.asJson();
 			addMetainformationWhenPublishLocation(event);
 			// Publish event to IoT
@@ -71,7 +117,9 @@ public abstract class Vehicle extends Simulation {
 		
 		GHResponse response = RouteCalculator.getInstance().calculateRoute(currentLocation.getLatitude(),
 				currentLocation.getLongitude(), destination.getLatitude(), destination.getLongitude());
+		
 
+		
 		// in case of error, the vehicle seems to be stuck somewhere
 		if (response.hasErrors()) {
 			
@@ -90,6 +138,15 @@ public abstract class Vehicle extends Simulation {
 
 			return;
 		}
+
+		route = Route.fromGHRes(this.getId().toString(),response);
+		try {
+			this.publishRoute();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 		
 		int i = 0;
 		long millis = DateTime.now().getMillis();
@@ -142,7 +199,7 @@ public abstract class Vehicle extends Simulation {
 
 					distLat = nextPointLatitude - currentLocation.getLatitude();
 					distLong = nextpointLongitude - currentLocation.getLongitude();
-					
+					tickCrash();
 					try {
 						// whatever time has passed so far, wait until 1s has passed
 						millis = DateTime.now().getMillis();
@@ -184,5 +241,6 @@ public abstract class Vehicle extends Simulation {
 			return DEFAULT_SPEED;
 		}
 	}
+	
 
 }
