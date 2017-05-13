@@ -109,17 +109,11 @@ public abstract class Vehicle extends Simulation {
 	protected void driveToDestination(Location destination) {
 		this.driveToDestination(destination, FALSE_INTERRUPTION);
 	}
-
-	protected void driveToDestination(Location destination, Interruption interruption) {
-		// Calculate the route between the current and destination location
-
-		// System.out.println("Entering");
-		
+	
+	protected GHResponse calculateRoute(Location destination) {
 		GHResponse response = RouteCalculator.getInstance().calculateRoute(currentLocation.getLatitude(),
 				currentLocation.getLongitude(), destination.getLatitude(), destination.getLongitude());
-		
 
-		
 		// in case of error, the vehicle seems to be stuck somewhere
 		if (response.hasErrors()) {
 			
@@ -136,8 +130,13 @@ public abstract class Vehicle extends Simulation {
 				e.printStackTrace();
 			}
 
-			return;
+			return null;
 		}
+		return response;
+	}
+	
+	protected void actuallyDriveToDestination(GHResponse response, Interruption interruption) {
+
 
 		route = Route.fromGHRes(this.getId().toString(),response);
 		try {
@@ -220,11 +219,24 @@ public abstract class Vehicle extends Simulation {
 		}
 	}
 
+	protected void driveToDestination(Location destination, Interruption interruption) {
+		// Calculate the route between the current and destination location
+
+		// System.out.println("Entering");
+		
+		GHResponse response = this.calculateRoute(destination);
+		if(response == null) {
+			return;
+		}
+		
+		this.actuallyDriveToDestination(response, interruption);
+	}
+
 	protected static interface Interruption {
 		public boolean interrupt();
 	}
 
-	private static class FalseInterruption implements Interruption {
+	public static class FalseInterruption implements Interruption {
 
 		@Override
 		public boolean interrupt() {

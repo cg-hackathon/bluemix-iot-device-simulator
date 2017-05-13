@@ -1,9 +1,14 @@
 package com.capgemini.hackathon.device.simulation.bo;
 
+import java.util.List;
+
 import com.capgemini.hackathon.device.simulation.DeviceClientConfig;
 import com.capgemini.hackathon.device.simulation.model.Emergency;
 import com.capgemini.hackathon.device.simulation.model.Location;
+import com.capgemini.hackathon.device.simulation.routing.RouteCalculator;
 import com.google.gson.JsonObject;
+import com.graphhopper.GHResponse;
+import com.graphhopper.util.EdgeIteratorState;
 import com.ibm.iotf.client.device.DeviceClient;
 
 public class Ambulance extends Vehicle {
@@ -24,13 +29,28 @@ public class Ambulance extends Vehicle {
 				commandHandler.setInterrupt(false);
 				System.out.println(
 						"Ambulance " + getId() + ": Emergency" + commandHandler.getEmergency().getEmergencyId());
-				driveToDestination(commandHandler.getEmergency().getLocation());
+				GHResponse response = calculateRoute(commandHandler.getEmergency().getLocation());
+				RouteCalculator.getInstance().adjustWeights(response);
+				this.sendUpdateToCars();
+				actuallyDriveToDestination(response, new Vehicle.FalseInterruption());
 				System.out.println("Ambulance " + getId() + ": Emergency"
 						+ commandHandler.getEmergency().getEmergencyId() + " reached");
 				solveEmergency();
 			}
 		}
 
+	}
+	
+	protected void sendUpdateToCars()  {
+		for(Car c : BORegistry.getInstance().getCars()) {
+			c.updateRoute();
+		}
+	}
+	
+	protected void adjustWeights(List<EdgeIteratorState> route) {
+		for(EdgeIteratorState edge : route) {
+			edge.setDistance(999);
+		}
 	}
 
 	@Override
