@@ -1,8 +1,12 @@
 package com.capgemini.hackathon.device.simulation.bo;
 
 import com.capgemini.hackathon.device.simulation.DeviceClientConfig;
+import com.capgemini.hackathon.device.simulation.model.EmergencyRequest;
 import com.capgemini.hackathon.device.simulation.model.Location;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.ibm.iotf.client.device.Command;
+import com.ibm.iotf.client.device.CommandCallback;
 import com.ibm.iotf.client.device.DeviceClient;
 
 public class Car extends Vehicle {
@@ -27,6 +31,32 @@ public class Car extends Vehicle {
 
 	@Override
 	protected void configureDeviceClient(DeviceClient deviceClient) {
+		deviceClient.setCommandCallback(new VehicleDeviceCommand());
 		// nothing to do
+	}
+	
+	private class VehicleDeviceCommand implements CommandCallback {
+
+		@Override
+		public void processCommand(Command command) {
+			JsonObject jsonCmd = new JsonParser().parse(command.getPayload()).getAsJsonObject().get("d")
+					.getAsJsonObject();
+			String latitude = jsonCmd.get("latitude").getAsString();
+			String longtitude = jsonCmd.get("longitude").getAsString();
+
+			handleNewEmergency(latitude, longtitude);
+
+		}
+
+		private void handleNewEmergency(String latitude, String longtitude) {
+			try{
+				JsonObject JsonEmergencyReq = new EmergencyRequest(0,0).asJson();
+				getDeviceClient().publishEvent(EmergencyRequest.EVENT, JsonEmergencyReq);
+			} catch (Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+
 	}
 }

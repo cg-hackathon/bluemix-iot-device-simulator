@@ -45,9 +45,9 @@ public abstract class Vehicle extends Simulation {
 	@Override
 	protected void configureDeviceClient(DeviceClient deviceClient)
 	{
-		deviceClient.setCommandCallback(new VehicleDeviceCommand());
+		//nothing to do
 	}
-
+	
 	public Vehicle(DeviceClientConfig deviceClientConfig, Location location, Object id) {
 		super(deviceClientConfig, id);
 		this.currentLocation = location;
@@ -247,29 +247,6 @@ public abstract class Vehicle extends Simulation {
 			return DEFAULT_SPEED;
 		}
 	}
-	private class VehicleDeviceCommand implements CommandCallback {
-
-		@Override
-		public void processCommand(Command command) {
-			JsonObject jsonCmd = new JsonParser().parse(command.getPayload()).getAsJsonObject().get("d")
-					.getAsJsonObject();
-			String latitude = jsonCmd.get("latitude").getAsString();
-			String longtitude = jsonCmd.get("longitude").getAsString();
-
-			handleNewEmergency(latitude, longtitude);
-
-		}
-
-		private void handleNewEmergency(String latitude, String longtitude) {
-			try{
-				JsonObject JsonEmergencyReq = new EmergencyRequest(0,0).asJson();
-				getDeviceClient().publishEvent(EmergencyRequest.EVENT, JsonEmergencyReq);
-			} catch (Exception e)
-			{
-				e.printStackTrace();
-			}
-		}
-
-	}
+	
 
 }
