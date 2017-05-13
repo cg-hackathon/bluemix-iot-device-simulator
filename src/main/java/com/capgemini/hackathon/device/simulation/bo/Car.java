@@ -43,20 +43,9 @@ public class Car extends Vehicle {
 					.getAsJsonObject();
 			String latitude = jsonCmd.get("latitude").getAsString();
 			String longtitude = jsonCmd.get("longitude").getAsString();
-
-			handleNewEmergency(latitude, longtitude);
+			
+			System.out.println("CAR RECEIVED COMMAND: "+command.getPayload());
 
 		}
-
-		private void handleNewEmergency(String latitude, String longtitude) {
-			try{
-				JsonObject JsonEmergencyReq = new EmergencyRequest(0,0).asJson();
-				getDeviceClient().publishEvent(EmergencyRequest.EVENT, JsonEmergencyReq);
-			} catch (Exception e)
-			{
-				e.printStackTrace();
-			}
-		}
-
 	}
 }
