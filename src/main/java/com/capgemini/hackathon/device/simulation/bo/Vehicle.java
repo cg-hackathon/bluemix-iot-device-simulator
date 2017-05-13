@@ -29,7 +29,7 @@ public abstract class Vehicle extends Simulation {
 
 	// How close the vehicles reach their destination
 	private static final double DIST_LAT_LONG = 0.00005;
-	private static final double DEFAULT_SPEED = 0.0001;
+	private static final double DEFAULT_SPEED = 0.0003;
 	// The steps driving the vehicles per iteration
 	private final static double SPEED = Vehicle.getSPEED();
 
